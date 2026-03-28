@@ -5,9 +5,9 @@
 # pytest-shard
 
 > **This is a fork of [AdamGleave/pytest-shard](https://github.com/AdamGleave/pytest-shard) by [Cloud Chen](https://github.com/wolke1007).**
-> Modifications include: Allure report integration, multi-shard result merging, nox-based tooling, and modernized packaging (Python 3.13, pyproject.toml).
+> Modifications include: Allure report integration, multi-shard result merging, nox-based tooling, and modernized packaging with `pyproject.toml`.
 
-`pytest-shard` splits your test suite across multiple machines or CI workers by hashing each test's node ID. Tests are distributed at the finest granularity — individual test cases — so parallelism works even when all tests live in a single file or a single parameterized method.
+`pytest-shard` splits your test suite across multiple machines or CI workers at individual test-case granularity. By default it sorts tests by node ID and assigns them round-robin across shards, so parallelism works even when all tests live in a single file or a single parameterized method.
 
 ## What it does
 
@@ -142,7 +142,7 @@ Tests are assigned using the **Longest Processing Time (LPT)** greedy algorithm:
 
 ## Contributions
 
-Contributions are welcome. Requires Python 3.13. Install the development toolchain and run the full check suite:
+Contributions are welcome. The package requires Python 3.11 or newer. Install the development toolchain and run the full check suite:
 
 ```bash
 pip install -e .[dev]
