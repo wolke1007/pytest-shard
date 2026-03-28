@@ -54,6 +54,8 @@ $ python -m pip install -e .[dev]
 $ nox --no-venv
 ```
 
+The Allure integration test also expects the `allure` CLI to be available on `PATH`.
+
 ## License
 
 This software is MIT licensed.

@@ -29,6 +29,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
+  "allure-pytest",
   "build",
   "hypothesis",
   "mypy",
