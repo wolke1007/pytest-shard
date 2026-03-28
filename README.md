@@ -46,7 +46,7 @@ The demo sessions that generate reports require the `allure` CLI to be available
 ### Installation
 
 ```bash
-pip install pytest-shard
+pip install pytest-shard-cloudc
 ```
 
 ### Split tests across N machines
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install pytest-shard
+      - run: pip install pytest-shard-cloudc
       - run: pytest --shard-id=${{ matrix.shard_id }} --num-shards=3
 ```
 
@@ -158,6 +158,20 @@ pytest tests --store-durations --durations-path=artifacts/test_durations.json
 - `--durations-path=PATH` controls where the JSON file is written or read from. The default is `.test_durations`.
 - Existing entries in the file are preserved; tests executed in the current run overwrite only their own entries.
 - When running shards in parallel, each shard should write to its own file, then you merge them before using `--shard-mode=duration`.
+
+### Verbose shard report
+
+By default, pytest prints a one-line summary at collection time:
+
+```
+Running 7 items in this shard (mode: roundrobin)
+```
+
+Pass `-v` to also list every test node ID assigned to this shard:
+
+```
+Running 7 items in this shard (mode: roundrobin): tests/test_foo.py::test_a, ...
+```
 
 | Mode | Count balance | Time balance | Needs data file | Per-test stable |
 |------|:---:|:---:|:---:|:---:|

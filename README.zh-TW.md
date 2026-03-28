@@ -46,7 +46,7 @@ pip install -e ".[dev]"
 ### 安裝
 
 ```bash
-pip install pytest-shard
+pip install pytest-shard-cloudc
 ```
 
 ### 將測試分散到 N 台機器
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install pytest-shard
+      - run: pip install pytest-shard-cloudc
       - run: pytest --shard-id=${{ matrix.shard_id }} --num-shards=3
 ```
 
@@ -158,6 +158,20 @@ pytest tests --store-durations --durations-path=artifacts/test_durations.json
 - `--durations-path=PATH` 用來控制 JSON 檔案的讀寫位置；預設是 `.test_durations`。
 - 檔案中原有的紀錄會保留；本次執行到的測試只會覆寫自己的項目。
 - 如果是平行 shard 執行，建議每個 shard 先寫到各自的檔案，再合併後給 `--shard-mode=duration` 使用。
+
+### Verbose shard 報告
+
+預設情況下，pytest 會在收集階段印出一行摘要：
+
+```
+Running 7 items in this shard (mode: roundrobin)
+```
+
+加上 `-v` 後，會額外列出該 shard 分配到的所有測試 node ID：
+
+```
+Running 7 items in this shard (mode: roundrobin): tests/test_foo.py::test_a, ...
+```
 
 | 模式 | 數量平衡 | 時間平衡 | 需要資料檔 | 每測試穩定 |
 |------|:---:|:---:|:---:|:---:|
