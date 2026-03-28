@@ -25,21 +25,9 @@
 
 | 指南 | 說明 |
 |------|------|
+| [分派模式指南](doc/sharding-modes.zh-TW.md) | 詳細說明 `roundrobin`、`hash`、`duration` 的行為、`.test_durations` 用法、verbose shard 報告，以及模式選擇策略。 |
+| [Demo Sessions](doc/demo-sessions.zh-TW.md) | 說明貢獻者如何用 `nox` 執行內建 demo 測試。 |
 | [Allure Report 整合指南](doc/allure-integration.zh-TW.md) | 說明如何跨 shard 收集 Allure 結果並合併成單一報告、在本機平行執行 shard，以及整合 GitHub Actions / CircleCI。包含 30 個測試、3 個平行 shard 的完整範例與 Timeline 截圖。 |
-
-## Demo Sessions
-
-其他貢獻者可先安裝開發相依套件，再直接執行內建的 demo 測試：
-
-```bash
-pip install -e ".[dev]"
-```
-
-- `nox -s demo-10-shards`：將 `demo/demo_tests/` 分成 10 個 shard 執行，並產生合併後的 Allure 報告
-- `nox -s demo-3-shards-parallel`：將 `demo/demo30_tests/` 以 3 個平行 shard 執行，適合查看清楚的 Timeline 範例
-- `nox -s demo-duration-comparison`：對 `demo/demo_duration_tests/` 做兩次執行，比較 round-robin 與 duration-based balancing
-
-凡是需要產生報告的 demo session，都需要系統上的 `PATH` 可找到 `allure` CLI。
 
 ## 快速開始
 
@@ -77,6 +65,8 @@ pytest --shard-id=0 --num-shards=3 --shard-mode=hash
 pytest --shard-id=0 --num-shards=3 --shard-mode=duration --durations-path=.test_durations
 ```
 
+更完整的模式比較、`.test_durations` 產生方式與選擇建議，請參考 [分派模式指南](doc/sharding-modes.zh-TW.md)。
+
 ### GitHub Actions 範例
 
 ```yaml
@@ -104,96 +94,11 @@ jobs:
       - run: pytest --shard-id=${CIRCLE_NODE_INDEX} --num-shards=${CIRCLE_NODE_TOTAL}
 ```
 
-## 分派演算法
+## 更多指南
 
-透過 `--shard-mode` 可選擇三種模式：
-
-### `roundrobin`（預設）
-
-將測試依 node ID 排序後，以索引輪流分配：
-
-```
-shard_id = 排序後的索引 % num_shards
-```
-
-- 各 shard 的測試數量差距**不超過 1**，無論測試總數為何。
-- 每次執行確定性，但新增或移除測試時，其他測試的分配可能隨著排序順序改變。
-
-### `hash`
-
-```
-shard_id = SHA-256(test_node_id) % num_shards
-```
-
-- 每個測試的歸屬**獨立穩定**，新增或移除其他測試不影響既有測試的分配。
-- 無狀態，不需要額外檔案。
-- 測試數量較少時分配可能不均。
-
-### `duration`
-
-使用 `.test_durations` JSON 檔案（與 [pytest-split](https://github.com/jerry-git/pytest-split) 格式相容），記錄每個 node ID 的執行時間（秒）：
-
-```json
-{
-  "tests/test_foo.py::test_slow": 4.2,
-  "tests/test_foo.py::test_fast": 0.1
-}
-```
-
-採用**最長工作優先（LPT）**貪婪演算法：依執行時間由長到短排序，依序分配給當前累計時間最短的 shard。沒有紀錄的測試預設為 1.0 秒。
-
-### 產生 `.test_durations`
-
-使用 `--store-durations` 可記錄每個測試在 call phase 的執行時間，並在 session 結束時寫入檔案：
-
-```bash
-# 寫入目前目錄下的 .test_durations
-pytest tests --store-durations
-
-# 指定自訂輸出路徑
-pytest tests --store-durations --durations-path=artifacts/test_durations.json
-```
-
-- `--store-durations` 會為本次執行啟用 duration 記錄。
-- `--durations-path=PATH` 用來控制 JSON 檔案的讀寫位置；預設是 `.test_durations`。
-- 檔案中原有的紀錄會保留；本次執行到的測試只會覆寫自己的項目。
-- 如果是平行 shard 執行，建議每個 shard 先寫到各自的檔案，再合併後給 `--shard-mode=duration` 使用。
-
-### Verbose shard 報告
-
-預設情況下，pytest 會在收集階段印出一行摘要：
-
-```
-Running 7 items in this shard (mode: roundrobin)
-```
-
-加上 `-v` 後，會額外列出該 shard 分配到的所有測試 node ID：
-
-```
-Running 7 items in this shard (mode: roundrobin): tests/test_foo.py::test_a, ...
-```
-
-### Duration 模式的前置條件
-
-`--shard-mode=duration` 需要 `--durations-path` 指向的檔案事先存在。
-如果檔案不存在，請先用 `--store-durations` 跑一次一般測試，例如：
-
-```bash
-pytest tests --store-durations --durations-path=.test_durations
-pytest tests --shard-mode=duration --durations-path=.test_durations --num-shards=3 --shard-id=0
-```
-
-| 模式 | 數量平衡 | 時間平衡 | 需要資料檔 | 每測試穩定 |
-|------|:---:|:---:|:---:|:---:|
-| `roundrobin` | ✓（精確） | — | — | — |
-| `hash` | △（小樣本） | — | — | ✓ |
-| `duration` | — | ✓（最佳化） | ✓ | — |
-
-### 該選哪一種模式？
-
-- 如果你想要最穩妥的預設行為，並希望各 shard 的測試數量大致平均，選 `roundrobin`。
-- 如果你更在意每個測試的分配穩定性，而不是各 shard 的測試數量完全平均，例如希望測試集增減時某個既有測試仍留在同一個 shard，選 `hash`。
-- 如果測試執行時間差異很大，而且你更在意整體 wall-clock time 而不是每個 shard 的測試數量，選 `duration`。在成熟的 CI pipeline 中，只要你已有有效的 `.test_durations` 檔案，通常這會是最佳選項。
+- 如果你要看各模式的行為、`.test_durations`、verbose shard 報告與選擇策略，請參考 [分派模式指南](doc/sharding-modes.zh-TW.md)。
+- 如果你要執行內建 demo，請參考 [Demo Sessions](doc/demo-sessions.zh-TW.md)。
+- 如果你要產生報告與查看平行執行截圖，請參考 [Allure Report 整合指南](doc/allure-integration.zh-TW.md)。
 
 ## 替代方案
 
