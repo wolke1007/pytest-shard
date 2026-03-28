@@ -1,3 +1,55 @@
-[tool.black]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pytest-shard"
+version = "0.1.2"
+description = "Shard tests to support parallelism across multiple machines."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [
+  { name = "Adam Gleave" },
+]
+dependencies = [
+  "pytest",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Pytest",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/AdamGleave/pytest-shard"
+Repository = "https://github.com/AdamGleave/pytest-shard"
+
+[project.entry-points.pytest11]
+pytest-shard = "pytest_shard.pytest_shard"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pytest_shard"]
+
+[tool.ruff]
 line-length = 100
-target-version = ["py37"]
+target-version = "py313"
+
+[tool.ruff.lint]
+ignore = ["E203", "W503"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["pytest_shard"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover"]
+
+[tool.coverage.run]
+include = ["pytest_shard/", "tests/*"]
