@@ -5,7 +5,7 @@ executors:
     docker:
       - image: cimg/python:3.11
     environment:
-      NUM_CPUS: 2  # more CPUs visible but we're throttled to 2, which breaks auto-detec
+      NUM_CPUS: 2  # more CPUs visible but we're throttled to 2, which breaks auto-detection of parallelism
 
 jobs:
   build:
