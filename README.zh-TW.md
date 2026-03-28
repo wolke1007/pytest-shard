@@ -11,33 +11,7 @@
 
 ## 運作示意
 
-```mermaid
-flowchart LR
-    A[收集整個測試套件] --> B[選擇 sharding mode]
-    B --> C[roundrobin]
-    B --> D[hash]
-    B --> E[duration]
-
-    C --> F[Shard 0]
-    C --> G[Shard 1]
-    C --> H[Shard N-1]
-
-    D --> F
-    D --> G
-    D --> H
-
-    E --> F
-    E --> G
-    E --> H
-
-    F --> I[Worker 或 CI job 0]
-    G --> J[Worker 或 CI job 1]
-    H --> K[Worker 或 CI job N-1]
-```
-
-- `roundrobin`：先依 node ID 排序，再用 `index % num_shards` 分配
-- `hash`：用 `SHA-256(node_id) % num_shards` 分配
-- `duration`：使用 `.test_durations` 做 LPT bin-packing 分配
+更容易理解的分開圖解，請直接參考 [分派模式指南](doc/sharding-modes.zh-TW.md) 中 `roundrobin`、`hash`、`duration` 各自的示意圖。
 
 ## 能做什麼
 

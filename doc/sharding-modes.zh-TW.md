@@ -16,6 +16,16 @@
 shard_id = 排序後的索引 % num_shards
 ```
 
+```mermaid
+flowchart LR
+    A[test_a] --> S0[Shard 0]
+    B[test_b] --> S1[Shard 1]
+    C[test_c] --> S2[Shard 2]
+    D[test_d] --> S0
+    E[test_e] --> S1
+    F[test_f] --> S2
+```
+
 - 各 shard 的測試數量差距**不超過 1**，無論測試總數為何。
 - 每次執行確定性，但新增或移除測試時，其他測試的分配可能隨著排序順序改變。
 
@@ -23,6 +33,19 @@ shard_id = 排序後的索引 % num_shards
 
 ```
 shard_id = SHA-256(test_node_id) % num_shards
+```
+
+```mermaid
+flowchart LR
+    A[test_a] --> H0[hash mod 3 = 2]
+    B[test_b] --> H1[hash mod 3 = 0]
+    C[test_c] --> H2[hash mod 3 = 2]
+    D[test_d] --> H3[hash mod 3 = 1]
+
+    H0 --> S2[Shard 2]
+    H1 --> S0[Shard 0]
+    H2 --> S2
+    H3 --> S1[Shard 1]
 ```
 
 - 每個測試的歸屬**獨立穩定**，新增或移除其他測試不影響既有測試的分配。
@@ -41,6 +64,16 @@ shard_id = SHA-256(test_node_id) % num_shards
 ```
 
 採用**最長工作優先（LPT）**貪婪演算法：依執行時間由長到短排序，依序分配給當前累計時間最短的 shard。沒有紀錄的測試預設為 1.0 秒。
+
+```mermaid
+flowchart LR
+    A[test_slow 10s] --> S0[Shard 0 total 10s]
+    B[test_mid 6s] --> S1[Shard 1 total 6s]
+    C[test_mid 5s] --> S2[Shard 2 total 5s]
+    D[test_fast 2s] --> S2b[Shard 2 total 7s]
+    E[test_fast 1s] --> S1b[Shard 1 total 7s]
+    F[test_fast 1s] --> S0b[Shard 0 total 11s]
+```
 
 ## 產生 `.test_durations`
 

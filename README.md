@@ -11,33 +11,7 @@
 
 ## How It Works
 
-```mermaid
-flowchart LR
-    A[Test suite collection] --> B[Choose sharding mode]
-    B --> C[roundrobin]
-    B --> D[hash]
-    B --> E[duration]
-
-    C --> F[Shard 0]
-    C --> G[Shard 1]
-    C --> H[Shard N-1]
-
-    D --> F
-    D --> G
-    D --> H
-
-    E --> F
-    E --> G
-    E --> H
-
-    F --> I[Worker or CI job 0]
-    G --> J[Worker or CI job 1]
-    H --> K[Worker or CI job N-1]
-```
-
-- `roundrobin`: sort by node ID, then assign by `index % num_shards`
-- `hash`: assign by `SHA-256(node_id) % num_shards`
-- `duration`: assign by LPT bin-packing using `.test_durations`
+See [Sharding Modes](doc/sharding-modes.md) for separate diagrams that explain how `roundrobin`, `hash`, and `duration` assign tests to shards.
 
 ## What it does
 

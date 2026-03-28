@@ -16,6 +16,16 @@ Tests are sorted by node ID and distributed by index:
 shard_id = index_in_sorted_list % num_shards
 ```
 
+```mermaid
+flowchart LR
+    A[test_a] --> S0[Shard 0]
+    B[test_b] --> S1[Shard 1]
+    C[test_c] --> S2[Shard 2]
+    D[test_d] --> S0
+    E[test_e] --> S1
+    F[test_f] --> S2
+```
+
 - Shard sizes differ by **at most 1** regardless of test count.
 - Deterministic per run, but adding or removing tests shifts the assignment of other tests.
 
@@ -23,6 +33,19 @@ shard_id = index_in_sorted_list % num_shards
 
 ```
 shard_id = SHA-256(test_node_id) % num_shards
+```
+
+```mermaid
+flowchart LR
+    A[test_a] --> H0[hash mod 3 = 2]
+    B[test_b] --> H1[hash mod 3 = 0]
+    C[test_c] --> H2[hash mod 3 = 2]
+    D[test_d] --> H3[hash mod 3 = 1]
+
+    H0 --> S2[Shard 2]
+    H1 --> S0[Shard 0]
+    H2 --> S2
+    H3 --> S1[Shard 1]
 ```
 
 - Each test's assignment is **stable in isolation** — adding or removing other tests never changes where an existing test lands.
@@ -41,6 +64,16 @@ Uses a `.test_durations` JSON file (compatible with [pytest-split](https://githu
 ```
 
 Tests are assigned using the **Longest Processing Time (LPT)** greedy algorithm: sort by duration descending, then place each test into the shard with the smallest accumulated time. Tests with no recorded duration default to 1.0 s.
+
+```mermaid
+flowchart LR
+    A[test_slow 10s] --> S0[Shard 0 total 10s]
+    B[test_mid 6s] --> S1[Shard 1 total 6s]
+    C[test_mid 5s] --> S2[Shard 2 total 5s]
+    D[test_fast 2s] --> S2b[Shard 2 total 7s]
+    E[test_fast 1s] --> S1b[Shard 1 total 7s]
+    F[test_fast 1s] --> S0b[Shard 0 total 11s]
+```
 
 ## Recording `.test_durations`
 
