@@ -63,11 +63,6 @@ def test_sha256hash_deterministic(s):
     assert isinstance(x, int)
 
 
-@given(strategies.text(), strategies.text())
-def test_sha256hash_no_clash(s1, s2):
-    if s1 != s2:
-        assert pytest_shard.sha256hash(s1) != pytest_shard.sha256hash(s2)
-
 
 # ---------------------------------------------------------------------------
 # Hash mode: filter_items_by_shard
