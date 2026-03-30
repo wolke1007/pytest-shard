@@ -5,6 +5,7 @@ import json
 import pathlib
 import warnings
 from collections.abc import Iterable, Sequence
+from typing import Protocol
 
 import pytest
 
@@ -139,6 +140,12 @@ def pytest_configure(config: pytest.Config) -> None:
 # ---------------------------------------------------------------------------
 
 
+class _XdistNodeLike(Protocol):
+    """Minimal xdist node shape needed by this plugin."""
+
+    config: pytest.Config
+
+
 def _format_collection_report(config: pytest.Config, nodeids: Sequence[str]) -> str:
     """Format the per-shard collection report for both local and xdist runs."""
     mode = config.getoption("shard_mode")
@@ -157,7 +164,7 @@ def pytest_report_collectionfinish(config: pytest.Config, items: Sequence[pytest
 
 
 @pytest.hookimpl(optionalhook=True)
-def pytest_xdist_node_collection_finished(node: object, ids: Sequence[str]) -> None:
+def pytest_xdist_node_collection_finished(node: _XdistNodeLike, ids: Sequence[str]) -> None:
     """Emit the shard report from the xdist controller so CI logs see it reliably."""
     config = node.config
     if getattr(config, "_pytest_shard_xdist_report_emitted", False):
