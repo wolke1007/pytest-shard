@@ -42,6 +42,16 @@ class MockItemWithMarker(MockItem):
         return None
 
 
+class MockTerminalReporter:
+    """Collect write_line calls for assertions."""
+
+    def __init__(self):
+        self.lines: list[str] = []
+
+    def write_line(self, line: str) -> None:
+        self.lines.append(line)
+
+
 # ---------------------------------------------------------------------------
 # Validators
 # ---------------------------------------------------------------------------
@@ -377,6 +387,41 @@ def test_pytest_report_collectionfinish_list_shard_tests_takes_priority_over_ver
     message = pytest_shard.pytest_report_collectionfinish(config, items)
 
     assert "\n  test_module.py::test_a" in message
+
+
+def test_pytest_xdist_node_collection_finished_writes_list_once():
+    opts = {"num_shards": 2, "shard_mode": "hash", "list_shard_tests": True}
+    terminalreporter = MockTerminalReporter()
+    config = SimpleNamespace(
+        option=SimpleNamespace(verbose=0),
+        getoption=lambda name, default=None: opts.get(name, default),
+        pluginmanager=SimpleNamespace(get_plugin=lambda name: terminalreporter if name == "terminalreporter" else None),
+    )
+    node = SimpleNamespace(config=config)
+    ids = ["test_module.py::test_first", "test_module.py::test_second"]
+
+    pytest_shard.pytest_xdist_node_collection_finished(node, ids)
+    pytest_shard.pytest_xdist_node_collection_finished(node, ids)
+
+    assert terminalreporter.lines == [
+        "Running 2 items in this shard (mode: hash)\n"
+        "  test_module.py::test_first\n"
+        "  test_module.py::test_second"
+    ]
+
+
+def test_pytest_xdist_node_collection_finished_without_terminalreporter_is_noop():
+    opts = {"num_shards": 2, "shard_mode": "hash", "list_shard_tests": True}
+    config = SimpleNamespace(
+        option=SimpleNamespace(verbose=0),
+        getoption=lambda name, default=None: opts.get(name, default),
+        pluginmanager=SimpleNamespace(get_plugin=lambda name: None),
+    )
+    node = SimpleNamespace(config=config)
+
+    pytest_shard.pytest_xdist_node_collection_finished(node, ["test_module.py::test_first"])
+
+    assert not hasattr(config, "_pytest_shard_xdist_report_emitted")
 
 
 def test_list_shard_tests_hash_balanced_demo_suite_covers_100_without_overlap():

@@ -139,16 +139,36 @@ def pytest_configure(config: pytest.Config) -> None:
 # ---------------------------------------------------------------------------
 
 
-def pytest_report_collectionfinish(config: pytest.Config, items: Sequence[pytest.Item]) -> str:
-    """Log how many and, if requested, which items are tested in this shard."""
+def _format_collection_report(config: pytest.Config, nodeids: Sequence[str]) -> str:
+    """Format the per-shard collection report for both local and xdist runs."""
     mode = config.getoption("shard_mode")
-    msg = f"Running {len(items)} items in this shard (mode: {mode})"
+    msg = f"Running {len(nodeids)} items in this shard (mode: {mode})"
     if config.getoption("list_shard_tests", default=False):
-        lines = [msg] + [f"  {item.nodeid}" for item in items]
+        lines = [msg] + [f"  {nodeid}" for nodeid in nodeids]
         return "\n".join(lines)
     if config.option.verbose > 0 and config.getoption("num_shards") > 1:
-        msg += ": " + ", ".join(item.nodeid for item in items)
+        msg += ": " + ", ".join(nodeids)
     return msg
+
+
+def pytest_report_collectionfinish(config: pytest.Config, items: Sequence[pytest.Item]) -> str:
+    """Log how many and, if requested, which items are tested in this shard."""
+    return _format_collection_report(config, [item.nodeid for item in items])
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_xdist_node_collection_finished(node: object, ids: Sequence[str]) -> None:
+    """Emit the shard report from the xdist controller so CI logs see it reliably."""
+    config = node.config
+    if getattr(config, "_pytest_shard_xdist_report_emitted", False):
+        return
+
+    terminalreporter = config.pluginmanager.get_plugin("terminalreporter")
+    if terminalreporter is None:
+        return
+
+    terminalreporter.write_line(_format_collection_report(config, ids))
+    setattr(config, "_pytest_shard_xdist_report_emitted", True)
 
 
 # ---------------------------------------------------------------------------
